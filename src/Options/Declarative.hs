@@ -89,6 +89,8 @@ class ArgRead a where
 
 instance ArgRead Int
 
+instance ArgRead Integer
+
 instance ArgRead Double
 
 instance ArgRead String where
