@@ -68,9 +68,9 @@ instance ArgRead a => Option (Flag _a _b _c _d a) where
     type Value (Flag _a _b _c _d a) = Unwrap a
     get = unwrap . getFlag
 
-instance ArgRead a => Option (Arg _a a) where
-    type Value (Arg _a a) = Unwrap a
-    get = unwrap . getArg
+instance Option (Arg _a a) where
+    type Value (Arg _a a) = a
+    get = getArg
 
 class ArgRead a where
     type Unwrap a :: *
