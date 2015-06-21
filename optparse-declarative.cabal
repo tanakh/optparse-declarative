@@ -1,7 +1,7 @@
 name:                optparse-declarative
 version:             0.1.0
 synopsis:            Declarative command line option parser
-description:         Declarative command line option parser
+description:         Declarative and easy to use command line option parser
 homepage:            https://github.com/tanakh/optparse-declarative
 license:             MIT
 license-file:        LICENSE
@@ -10,13 +10,21 @@ maintainer:          tanaka.hideyuki@gmail.com
 copyright:           (c) Hideyuki Tanaka 2015
 category:            System
 build-type:          Simple
--- extra-source-files:  
 cabal-version:       >=1.10
+
+extra-source-files:  README.md
+                     ChangeLog.md
+                     example/simple.hs
+                     example/subcmd.hs
+
+source-repository head
+  type:     git
+  location: https://github.com/tanakh/optparse-declarative.git
 
 library
   exposed-modules:     Options.Declarative
-  -- other-modules:       
-  -- other-extensions:    
+  -- other-modules:
+  -- other-extensions:
   build-depends:       base >=4.7 && <5
   hs-source-dirs:      src
   default-language:    Haskell2010
