@@ -8,7 +8,6 @@
 {-# LANGUAGE PolyKinds                 #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
-{-# LANGUAGE Trustworthy               #-}
 {-# LANGUAGE TupleSections             #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
@@ -274,6 +273,7 @@ run' cmd name mbver args = do
             ++ [ Option "?" ["help"]    (NoArg ("help",    "t")) "display this help and exit" ]
             ++ [ Option "V" ["version"] (NoArg ("version", "t")) "output version information and exit"
                | isJust mbver ]
+            ++ [ Option "v" ["verbose"] (OptArg (\arg -> ("verbose", fromMaybe "" arg)) "n") "set verbosity level" ]
 
         prog     = unwords name
         vermsg   = prog ++ maybe "" (" version " ++) mbver
