@@ -1,22 +1,23 @@
-{-# LANGUAGE DataKinds                 #-}
-{-# LANGUAGE DefaultSignatures         #-}
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE GADTs                     #-}
-{-# LANGUAGE KindSignatures            #-}
-{-# LANGUAGE PolyKinds                 #-}
-{-# LANGUAGE RankNTypes                #-}
-{-# LANGUAGE ScopedTypeVariables       #-}
-{-# LANGUAGE TupleSections             #-}
-{-# LANGUAGE TypeFamilies              #-}
-{-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DefaultSignatures          #-}
+{-# LANGUAGE ExistentialQuantification  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 
 -- | Declarative options parser
 
 module Options.Declarative (
     -- * Command type
-    Cmd(..),
+    Cmd,
     IsCmd,
 
     -- * Argument definition tools
@@ -38,6 +39,9 @@ module Options.Declarative (
 
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.Logger
+import           Control.Monad.Trans
+import qualified Data.ByteString.Char8 as S
 import           Data.List
 import           Data.Maybe
 import           Data.Proxy
@@ -46,6 +50,7 @@ import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit
 import           System.IO
+import           System.Log.FastLogger
 import           Text.Read
 
 -- argument types
@@ -119,13 +124,26 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
 
 -- command types
 
-newtype Cmd (help :: Symbol) = Cmd (IO ())
+newtype Cmd (help :: Symbol) a =
+  Cmd { unCmd :: LoggingT IO a }
+  deriving (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)
 
-data Group
-    = Group
-      { groupHelp :: String
-      , groupCmds :: [SubCmd]
-      }
+cmdLogger :: Int -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+cmdLogger verbosityLevel _loc _src level msg = do
+    let minLevel =
+            [ LevelError
+            , LevelWarn
+            , LevelInfo
+            , LevelDebug
+            ] !! verbosityLevel
+    when (level >= minLevel) $
+        S.putStrLn $ fromLogStr msg
+
+data Group =
+    Group
+    { groupHelp :: String
+    , groupCmds :: [SubCmd]
+    }
 
 data SubCmd = forall c. IsCmd c => SubCmd String c
 
@@ -222,7 +240,7 @@ instance ( KnownSymbol placeholder, IsCmd c )
     runCmd f name mbver options nonOptions unrecognized =
         runCmd (f $ Arg nonOptions) name mbver options [] unrecognized
 
-instance KnownSymbol help => IsCmd (Cmd help) where
+instance KnownSymbol help => IsCmd (Cmd help ()) where
     getCmdHelp  _ = symbolVal (Proxy :: Proxy help)
     getOptDescr _ = []
 
@@ -231,7 +249,12 @@ instance KnownSymbol help => IsCmd (Cmd help) where
 
     runCmd (Cmd m) name _ options nonOptions unrecognized =
         case (options, nonOptions, unrecognized) of
-            (_, [], []) -> m
+            (_, [], []) -> do
+                let verbosityLevel = fromMaybe 0 $ do
+                        s <- lookup "verbose" options
+                        if null s then return 1 else readMaybe s
+                runLoggingT m $ cmdLogger verbosityLevel
+
             _ -> do
                 forM_ nonOptions $ \o ->
                     errorExit name $ "unrecognized argument '" ++ o ++ "'"

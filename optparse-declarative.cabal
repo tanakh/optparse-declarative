@@ -14,8 +14,7 @@ cabal-version:       >=1.10
 
 extra-source-files:  README.md
                      ChangeLog.md
-                     example/simple.hs
-                     example/subcmd.hs
+                     example/*.hs
 
 source-repository head
   type:     git
@@ -26,3 +25,7 @@ library
   exposed-modules:     Options.Declarative
   default-language:    Haskell2010
   build-depends:       base >=4.7 && <5
+                     , mtl
+                     , monad-logger
+                     , bytestring
+                     , fast-logger
