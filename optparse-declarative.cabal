@@ -1,5 +1,5 @@
 name:                optparse-declarative
-version:             0.1.0
+version:             0.2.0
 synopsis:            Declarative command line option parser
 description:         Declarative and easy to use command line option parser
 homepage:            https://github.com/tanakh/optparse-declarative
