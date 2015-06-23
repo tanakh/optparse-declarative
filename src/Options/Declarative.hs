@@ -17,8 +17,10 @@
 
 module Options.Declarative (
     -- * Command type
-    Cmd,
     IsCmd,
+    Cmd,
+    getVerbosity,
+    logStr,
 
     -- * Argument definition tools
     Option(..),
@@ -39,9 +41,7 @@ module Options.Declarative (
 
 import           Control.Applicative
 import           Control.Monad
-import           Control.Monad.Logger
-import           Control.Monad.Trans
-import qualified Data.ByteString.Char8 as S
+import           Control.Monad.Reader
 import           Data.List
 import           Data.Maybe
 import           Data.Proxy
@@ -50,15 +50,16 @@ import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit
 import           System.IO
-import           System.Log.FastLogger
 import           Text.Read
 
--- argument types
-
+-- | Command line option
 class Option a where
+    -- | Type of the argument' value
     type Value a :: *
+    -- | Get the argument' value
     get :: a -> Value a
 
+-- | Named argument
 newtype Flag (shortNames  :: Symbol  )
              (longNames   :: [Symbol])
              (placeholder :: Symbol  )
@@ -66,6 +67,7 @@ newtype Flag (shortNames  :: Symbol  )
              a
     = Flag { getFlag :: a }
 
+-- | Unnamed argument
 newtype Arg (placeholder :: Symbol) a = Arg { getArg :: a }
 
 instance ArgRead a => Option (Flag _a _b _c _d a) where
@@ -76,18 +78,23 @@ instance Option (Arg _a a) where
     type Value (Arg _a a) = a
     get = getArg
 
+-- | Command line option's annotated types
 class ArgRead a where
+    -- | Type of the argument
     type Unwrap a :: *
     type Unwrap a = a
 
+    -- | Get the argument's value
     unwrap :: a -> Unwrap a
     default unwrap :: a ~ Unwrap a => a -> Unwrap a
     unwrap = id
 
+    -- | Argument parser
     argRead :: Maybe String -> Maybe a
     default argRead :: Read a => Maybe String -> Maybe a
     argRead s = readMaybe =<< s
 
+    -- | Indicate this argument is mandatory
     needArg :: Proxy a -> Bool
     needArg _ = True
 
@@ -111,6 +118,7 @@ instance ArgRead a => ArgRead (Maybe a) where
     argRead Nothing = Just Nothing
     argRead (Just a) = Just <$> argRead (Just a)
 
+-- | The argument which has defalut value
 newtype Def (defaultValue :: Symbol) a =
     Def { getDef :: a }
 
@@ -122,31 +130,34 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
         let s' = fromMaybe (symbolVal (Proxy :: Proxy defaultValue)) s
         in Def <$> argRead (Just s')
 
--- command types
-
+-- | Command
 newtype Cmd (help :: Symbol) a =
-  Cmd { unCmd :: LoggingT IO a }
-  deriving (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)
+    Cmd { unCmd :: ReaderT Int IO a }
+    deriving (Functor, Applicative, Monad, MonadIO)
 
-cmdLogger :: Int -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
-cmdLogger verbosityLevel _loc _src level msg = do
-    let minLevel =
-            [ LevelError
-            , LevelWarn
-            , LevelInfo
-            , LevelDebug
-            ] !! verbosityLevel
-    when (level >= minLevel) $
-        S.putStrLn $ fromLogStr msg
+-- | Return the verbosity level ('--verbosity=n')
+getVerbosity :: Cmd help Int
+getVerbosity = Cmd ask
 
+-- | Output string when the verbosity level is greater than or equal to `logLevel`
+logStr :: Int         -- ^ Verbosity Level
+       -> String      -- ^ Message
+       -> Cmd help ()
+logStr logLevel msg = do
+    verbosity <- getVerbosity
+    when (verbosity >= logLevel) $ liftIO $ putStrLn msg
+
+-- | Command group
 data Group =
     Group
     { groupHelp :: String
     , groupCmds :: [SubCmd]
     }
 
+-- | Sub command
 data SubCmd = forall c. IsCmd c => SubCmd String c
 
+-- | Command class
 class IsCmd c where
     getCmdHelp  :: c -> String
     default getCmdHelp :: (c ~ (a -> b), IsCmd b) => c -> String
@@ -253,7 +264,7 @@ instance KnownSymbol help => IsCmd (Cmd help ()) where
                 let verbosityLevel = fromMaybe 0 $ do
                         s <- lookup "verbose" options
                         if null s then return 1 else readMaybe s
-                runLoggingT m $ cmdLogger verbosityLevel
+                runReaderT m verbosityLevel
 
             _ -> do
                 forM_ nonOptions $ \o ->
@@ -284,6 +295,7 @@ instance IsCmd Group where
     runCmd _ name _ _ _ _ =
         errorExit name "no command given"
 
+-- | Make a sub command
 subCmd :: IsCmd c => String -> c -> SubCmd
 subCmd = SubCmd
 
