@@ -25,9 +25,9 @@ For example, this is a simple greeting program:
 ```hs
 greet :: Flag "g" '["greet"] "STRING" "greeting message" (Def "Hello" String)
       -> Arg "NAME" String
-      -> Cmd "greet"
-greet msg name = Cmd $ do
-    putStrLn $ get msg ++ ", " ++ get name ++ "!"
+      -> Cmd "Greeting command" ()
+greet msg name =
+    liftIO $ putStrLn $ get msg ++ ", " ++ get name ++ "!"
 ```
 
 There are two type of options, `Flag` and `Arg`.
@@ -40,10 +40,9 @@ In order to get the value of usual type (in this case, that is `String`),
 you can use `get` function.
 
 The whole type of command is `Cmd`.
-`Cmd <description>` is basically newtype of `IO ()`,
-except this contains extra information.
+`Cmd` is an instance of `MonadIO` and it has some extra information.
 
-When you define the command, there remains only invoking the command.
+After defining a command, you just invoke it by `run_`.
 
 ```hs
 main :: IO ()
@@ -95,18 +94,18 @@ main = run_ $
 greet :: Flag "g" '["greet"] "STRING" "greeting message" (Def "Hello" String)
       -> Flag "" '["decolate"] "" "decolate message" Bool
       -> Arg "NAME" String
-      -> Cmd "Greeting command"
-greet msg deco name = Cmd $ do
+      -> Cmd "Greeting command" ()
+greet msg deco name = do
     let f x | get deco = "*** " ++ x ++ " ***"
             | otherwise = x
-    putStrLn $ f $ get msg ++ ", " ++ get name ++ "!"
+    liftIO $ putStrLn $ f $ get msg ++ ", " ++ get name ++ "!"
 
 connect :: Flag "h" '["host"] "HOST" "host name"   (Def "localhost" String)
         -> Flag "p" '["port"] "PORT" "port number" (Def "8080"      Int   )
-    -> Cmd "Connect command"
-connect host port = Cmd $ do
+        -> Cmd "Connect command" ()
+connect host port = do
     let addr = get host ++ ":" ++ show (get port)
-    putStrLn $ "connect to " ++ addr
+    liftIO $ putStrLn $ "connect to " ++ addr
 ```
 
 And this is the output:
