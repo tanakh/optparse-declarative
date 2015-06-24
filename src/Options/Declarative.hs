@@ -323,9 +323,12 @@ run' cmd name mbver args = do
 
         prog     = unwords name
         vermsg   = prog ++ maybe "" (" version " ++) mbver
+        header = "Usage: " ++ prog ++ " [OPTION...]" ++ getUsageHeader cmd prog ++ "\n" ++
+                 "  " ++ getCmdHelp cmd ++ "\n\n" ++
+                 "Options:"
+
         usage    =
-            -- prog ++ ": " ++ getCmdHelp cmd ++ "\n\n" ++
-            usageInfo ("Usage: " ++ prog ++ " [OPTION...]" ++ getUsageHeader cmd prog ++ "\nOptions:") optDescr ++
+            usageInfo header optDescr ++
             getUsageFooter cmd prog
 
     case getOpt' RequireOrder optDescr args of
