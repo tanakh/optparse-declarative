@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiWayIf                 #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -271,7 +272,9 @@ instance KnownSymbol help => IsCmd (Cmd help ()) where
             (_, [], []) -> do
                 let verbosityLevel = fromMaybe 0 $ do
                         s <- lookup "verbose" options
-                        if null s then return 1 else readMaybe s
+                        if | null s -> return 1
+                           | all (== 'v') s -> return $ length s + 1
+                           | otherwise -> readMaybe s
                 runReaderT m verbosityLevel
 
             _ -> do
