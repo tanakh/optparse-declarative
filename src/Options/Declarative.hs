@@ -19,8 +19,9 @@ module Options.Declarative (
     -- * Command type
     IsCmd,
     Cmd,
-    getVerbosity,
     logStr,
+    getVerbosity,
+    getLogger,
 
     -- * Argument definition tools
     Option(..),
@@ -42,6 +43,7 @@ module Options.Declarative (
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Reader
+import           Control.Monad.Trans
 import           Data.List
 import           Data.Maybe
 import           Data.Proxy
@@ -135,17 +137,23 @@ newtype Cmd (help :: Symbol) a =
     Cmd { unCmd :: ReaderT Int IO a }
     deriving (Functor, Applicative, Monad, MonadIO)
 
--- | Return the verbosity level ('--verbosity=n')
-getVerbosity :: Cmd help Int
-getVerbosity = Cmd ask
-
 -- | Output string when the verbosity level is greater than or equal to `logLevel`
 logStr :: Int         -- ^ Verbosity Level
        -> String      -- ^ Message
        -> Cmd help ()
 logStr logLevel msg = do
+    l <- getLogger
+    l logLevel msg
+
+-- | Return the verbosity level ('--verbosity=n')
+getVerbosity :: Cmd help Int
+getVerbosity = Cmd ask
+
+-- | Retrieve the logger function
+getLogger :: MonadIO m => Cmd a (Int -> String -> m ())
+getLogger = do
     verbosity <- getVerbosity
-    when (verbosity >= logLevel) $ liftIO $ putStrLn msg
+    return $ \logLevel msg -> when (verbosity >= logLevel) $ liftIO $ putStrLn msg
 
 -- | Command group
 data Group =

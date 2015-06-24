@@ -5,8 +5,8 @@ import           Options.Declarative
 
 greet :: Flag "g" '["greet"] "STRING" "greeting message" (Def "Hello" String)
       -> Arg "NAME" String
-      -> Cmd "greet" ()
-greet msg name = do
+      -> Cmd "Simple greeting example" ()
+greet msg name =
     liftIO $ putStrLn $ get msg ++ ", " ++ get name ++ "!"
 
 main :: IO ()

@@ -14,7 +14,7 @@ greet msg deco name = do
 
 connect :: Flag "h" '["host"] "HOST" "host name"   (Def "localhost" String)
         -> Flag "p" '["port"] "PORT" "port number" (Def "8080"      Int   )
-    -> Cmd "Connect command" ()
+        -> Cmd "Connect command" ()
 connect host port = do
     let addr = get host ++ ":" ++ show (get port)
     liftIO $ putStrLn $ "connect to " ++ addr
@@ -29,7 +29,7 @@ getOptExample output input libdir =
 
 main :: IO ()
 main = run_ $
-    Group "Test program for library"
+    Group "Test program for sub commands"
     [ subCmd "greet"   greet
     , subCmd "connect" connect
     , subCmd "getopt"  getOptExample
