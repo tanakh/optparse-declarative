@@ -71,7 +71,7 @@ $ ./simple --greet=Goodbye World
 Goodbye, World!
 ```
 
-## Writing multiple sum-commands
+## Writing multiple sub-commands
 
 You can write (nested) sub-commands.
 
