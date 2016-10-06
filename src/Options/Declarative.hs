@@ -32,6 +32,7 @@ module Options.Declarative (
     -- * Defining argment types
     ArgRead(..),
     Def,
+    List(..),
 
     -- * Subcommands support
     Group(..),
@@ -47,6 +48,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans
 import           Data.List
 import           Data.Maybe
+import           Data.Monoid
 import           Data.Proxy
 import           GHC.TypeLits
 import           System.Console.GetOpt
@@ -54,6 +56,7 @@ import           System.Environment
 import           System.Exit
 import           System.IO
 import           Text.Read
+-- import           Debug.Trace
 
 -- | Command line option
 class Option a where
@@ -93,9 +96,9 @@ class ArgRead a where
     unwrap = id
 
     -- | Argument parser
-    argRead :: Maybe String -> Maybe a
-    default argRead :: Read a => Maybe String -> Maybe a
-    argRead s = readMaybe =<< s
+    argRead :: [String] -> Maybe a
+    default argRead :: Read a => [String] -> Maybe a
+    argRead ss = getLast $ mconcat $ Last . readMaybe <$> ss
 
     -- | Indicate this argument is mandatory
     needArg :: Proxy a -> Bool
@@ -108,19 +111,29 @@ instance ArgRead Integer
 instance ArgRead Double
 
 instance ArgRead String where
-    argRead = id
+    argRead [] = Nothing
+    argRead xs = Just $ head $ reverse xs
 
 instance ArgRead Bool where
-    argRead Nothing = Just False
-    argRead (Just "f") = Just False
-    argRead (Just "t") = Just True
+    argRead [] = Just False
+    argRead ["t"] = Just True
     argRead _ = Nothing
 
     needArg _ = False
 
 instance ArgRead a => ArgRead (Maybe a) where
-    argRead Nothing = Just Nothing
-    argRead (Just a) = Just <$> argRead (Just a)
+    argRead [] = Just Nothing
+    argRead xs = argRead xs
+
+newtype List a = List { getList :: [a] }
+
+instance ArgRead a => ArgRead (List a) where
+    type Unwrap (List a) = [a]
+    unwrap v = getList v
+    argRead xs = let vs = (argRead . (:[])) <$> xs
+                 in case [fromJust v | v <- vs, isJust v] of
+                    [] -> Nothing
+                    xs -> Just $ List xs
 
 -- | The argument which has defalut value
 newtype Def (defaultValue :: Symbol) a =
@@ -131,8 +144,10 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
     unwrap = unwrap . getDef
 
     argRead s =
-        let s' = fromMaybe (symbolVal (Proxy :: Proxy defaultValue)) s
-        in Def <$> argRead (Just s')
+        let s' = case s of
+                 [] -> [symbolVal (Proxy :: Proxy defaultValue)]
+                 v  -> v
+        in Def <$> argRead s'
 
 -- | Command
 newtype Cmd (help :: Symbol) a =
@@ -225,18 +240,17 @@ instance ( KnownSymbol shortNames
             (symbolVal (Proxy :: Proxy help))
         : getOptDescr (f undefined)
 
-    runCmd f name mbver options nonOptions unrecognized =
-        let flagname = head $
-                       symbolVals (Proxy :: Proxy longNames) ++
-                       [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
-            mbs = lookup flagname options
-        in case (argRead mbs, mbs) of
-            (Nothing, Nothing) ->
-                errorExit name $ "flag must be specified: --" ++ flagname
-            (Nothing, Just s) ->
-                errorExit name $ "bad argument: --" ++ flagname ++ "=" ++ s
-            (Just arg, _) ->
-                runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
+    runCmd f name mbver options nonOptions unrecognized
+       = let flagname = head $ symbolVals (Proxy :: Proxy longNames) ++
+                                 [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
+             mbs = map snd $ filter ((== flagname) . fst) options
+         in case (mbs, argRead mbs) of
+                      ([], Nothing) ->
+                          errorExit name $ "flag must be specified: --" ++ flagname
+                      (s:_, Nothing) ->
+                          errorExit name $ "bad argument: --" ++ flagname ++ "=" ++ s
+                      (_, Just arg) ->
+                          runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
 
 instance {-# OVERLAPPABLE #-}
          ( KnownSymbol placeholder, ArgRead a, IsCmd c )
@@ -261,7 +275,7 @@ runCmdOne f name mbver options nonOptions unrecognized =
     case nonOptions of
         [] -> errorExit name "not enough arguments"
         (opt: rest) ->
-            case argRead (Just opt) of
+            case argRead [opt] of
                 Nothing ->
                     errorExit name $ "bad argument: " ++ opt
                 Just arg ->
@@ -274,7 +288,7 @@ instance {-# OVERLAPPING #-}
         " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
 
     runCmd f name mbver options nonOptions unrecognized =
-        case traverse argRead $ Just <$> nonOptions of
+        case traverse argRead $ (:[]) <$> nonOptions of
             Nothing ->
                 errorExit name $ "bad arguments: " ++ unwords nonOptions
             Just opts ->
