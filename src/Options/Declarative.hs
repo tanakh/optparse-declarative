@@ -237,8 +237,9 @@ instance ( KnownSymbol shortNames
             (Just arg, _) ->
                 runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
 
-instance ( KnownSymbol placeholder, IsCmd c )
-         => IsCmd (Arg placeholder String -> c) where
+instance {-# OVERLAPPABLE #-}
+         ( KnownSymbol placeholder, ArgRead a, IsCmd c )
+         => IsCmd (Arg placeholder a -> c) where
     getUsageHeader f prog =
         " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
 
@@ -252,13 +253,18 @@ instance ( KnownSymbol placeholder, IsCmd c )
                     Just arg ->
                         runCmd (f $ Arg arg) name mbver options rest unrecognized
 
-instance ( KnownSymbol placeholder, IsCmd c )
-         => IsCmd (Arg placeholder [String] -> c) where
+instance {-# OVERLAPPING #-}
+         ( KnownSymbol placeholder, ArgRead a, IsCmd c )
+         => IsCmd (Arg placeholder [a] -> c) where
     getUsageHeader f prog =
         " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
 
     runCmd f name mbver options nonOptions unrecognized =
-        runCmd (f $ Arg nonOptions) name mbver options [] unrecognized
+        case traverse argRead $ Just <$> nonOptions of
+            Nothing ->
+                errorExit name $ "bad arguments: " ++ unwords nonOptions
+            Just opts ->
+                runCmd (f $ Arg opts) name mbver options [] unrecognized
 
 instance KnownSymbol help => IsCmd (Cmd help ()) where
     getCmdHelp  _ = symbolVal (Proxy :: Proxy help)
