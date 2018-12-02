@@ -240,18 +240,31 @@ instance ( KnownSymbol shortNames
 instance {-# OVERLAPPABLE #-}
          ( KnownSymbol placeholder, ArgRead a, IsCmd c )
          => IsCmd (Arg placeholder a -> c) where
-    getUsageHeader f prog =
-        " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
+    getUsageHeader = getUsageHeaderOne (Proxy :: Proxy placeholder)
 
-    runCmd f name mbver options nonOptions unrecognized =
-        case nonOptions of
-            [] -> errorExit name "not enough arguments"
-            (opt: rest) ->
-                case argRead (Just opt) of
-                    Nothing ->
-                        errorExit name $ "bad argument: " ++ opt
-                    Just arg ->
-                        runCmd (f $ Arg arg) name mbver options rest unrecognized
+    runCmd = runCmdOne
+
+instance {-# OVERLAPPING #-}
+         ( KnownSymbol placeholder, IsCmd c )
+         => IsCmd (Arg placeholder String -> c) where
+    getUsageHeader = getUsageHeaderOne (Proxy :: Proxy placeholder)
+
+    runCmd = runCmdOne
+
+getUsageHeaderOne :: ( KnownSymbol placeholder, ArgRead a, IsCmd c )
+                  => Proxy placeholder -> (Arg placeholder a -> c) -> String -> String
+getUsageHeaderOne proxy f prog =
+    " " ++ symbolVal proxy ++ getUsageHeader (f undefined) prog
+
+runCmdOne f name mbver options nonOptions unrecognized =
+    case nonOptions of
+        [] -> errorExit name "not enough arguments"
+        (opt: rest) ->
+            case argRead (Just opt) of
+                Nothing ->
+                    errorExit name $ "bad argument: " ++ opt
+                Just arg ->
+                    runCmd (f $ Arg arg) name mbver options rest unrecognized
 
 instance {-# OVERLAPPING #-}
          ( KnownSymbol placeholder, ArgRead a, IsCmd c )
