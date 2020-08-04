@@ -237,28 +237,47 @@ instance ( KnownSymbol shortNames
             (Just arg, _) ->
                 runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
 
-instance ( KnownSymbol placeholder, IsCmd c )
+instance {-# OVERLAPPABLE #-}
+         ( KnownSymbol placeholder, ArgRead a, IsCmd c )
+         => IsCmd (Arg placeholder a -> c) where
+    getUsageHeader = getUsageHeaderOne (Proxy :: Proxy placeholder)
+
+    runCmd = runCmdOne
+
+instance {-# OVERLAPPING #-}
+         ( KnownSymbol placeholder, IsCmd c )
          => IsCmd (Arg placeholder String -> c) where
+    getUsageHeader = getUsageHeaderOne (Proxy :: Proxy placeholder)
+
+    runCmd = runCmdOne
+
+getUsageHeaderOne :: ( KnownSymbol placeholder, ArgRead a, IsCmd c )
+                  => Proxy placeholder -> (Arg placeholder a -> c) -> String -> String
+getUsageHeaderOne proxy f prog =
+    " " ++ symbolVal proxy ++ getUsageHeader (f undefined) prog
+
+runCmdOne f name mbver options nonOptions unrecognized =
+    case nonOptions of
+        [] -> errorExit name "not enough arguments"
+        (opt: rest) ->
+            case argRead (Just opt) of
+                Nothing ->
+                    errorExit name $ "bad argument: " ++ opt
+                Just arg ->
+                    runCmd (f $ Arg arg) name mbver options rest unrecognized
+
+instance {-# OVERLAPPING #-}
+         ( KnownSymbol placeholder, ArgRead a, IsCmd c )
+         => IsCmd (Arg placeholder [a] -> c) where
     getUsageHeader f prog =
         " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
 
     runCmd f name mbver options nonOptions unrecognized =
-        case nonOptions of
-            [] -> errorExit name "not enough arguments"
-            (opt: rest) ->
-                case argRead (Just opt) of
-                    Nothing ->
-                        errorExit name $ "bad argument: " ++ opt
-                    Just arg ->
-                        runCmd (f $ Arg arg) name mbver options rest unrecognized
-
-instance ( KnownSymbol placeholder, IsCmd c )
-         => IsCmd (Arg placeholder [String] -> c) where
-    getUsageHeader f prog =
-        " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
-
-    runCmd f name mbver options nonOptions unrecognized =
-        runCmd (f $ Arg nonOptions) name mbver options [] unrecognized
+        case traverse argRead $ Just <$> nonOptions of
+            Nothing ->
+                errorExit name $ "bad arguments: " ++ unwords nonOptions
+            Just opts ->
+                runCmd (f $ Arg opts) name mbver options [] unrecognized
 
 instance KnownSymbol help => IsCmd (Cmd help ()) where
     getCmdHelp  _ = symbolVal (Proxy :: Proxy help)
