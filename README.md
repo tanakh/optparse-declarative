@@ -1,5 +1,7 @@
 # optparse-declarative
 
+[![Hackage](https://matrix.hackage.haskell.org/api/v2/packages/optparse-declarative/badge)](http://hackage.haskell.org/package/optparse-declarative) [![GitHub Actions: test](https://github.com/tanakh/optparse-declarative/workflows/test/badge.svg)](https://github.com/tanakh/optparse-declarative/actions?query=workflow%3Atest) [![Join the chat at https://gitter.im/optparse-declarative/community](https://badges.gitter.im/optparse-declarative/community.svg)](https://gitter.im/optparse-declarative/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 `optparse-declarative` is a declarative and easy to use command-line option parser.
 
 # Install
