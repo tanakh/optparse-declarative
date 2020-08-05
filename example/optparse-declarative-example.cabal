@@ -1,0 +1,48 @@
+cabal-version:       2.2
+name:                optparse-declarative-example
+version:             0.1.0
+synopsis:            Declarative command line option parser
+description:         Declarative and easy to use command line option parser
+homepage:            https://github.com/tanakh/optparse-declarative
+license:             MIT
+author:              Hideyuki Tanaka
+maintainer:          tanaka.hideyuki@gmail.com, kazuki.okamoto@kakkun61.com
+copyright:           2020 Kazuki Okamoto (岡本和樹), (c) Hideyuki Tanaka 2015
+category:            System
+build-type:          Simple
+
+source-repository head
+  type:     git
+  location: https://github.com/tanakh/optparse-declarative.git
+
+common common
+  build-depends:    base >=4.7 && <5
+  default-language: Haskell2010
+
+executable simple
+  import:         common
+  main-is:        simple.hs
+  hs-source-dirs: .
+  build-depends:  optparse-declarative
+                , mtl
+
+executable subcmd
+  import:         common
+  main-is:        subcmd.hs
+  hs-source-dirs: .
+  build-depends:  optparse-declarative
+                , mtl
+
+executable verbose
+  import:         common
+  main-is:        verbose.hs
+  hs-source-dirs: .
+  build-depends:  optparse-declarative
+                , mtl
+
+executable nonstrargs
+  import:         common
+  main-is:        nonstrargs.hs
+  hs-source-dirs: .
+  build-depends:  optparse-declarative
+                , mtl

@@ -20,40 +20,9 @@ source-repository head
   type:     git
   location: https://github.com/tanakh/optparse-declarative.git
 
-common common
-  build-depends:    base >=4.7 && <5
-  default-language: Haskell2010
-
 library
-  import:          common
-  hs-source-dirs:  src
-  exposed-modules: Options.Declarative
-  build-depends:   mtl
-
-executable example-simple
-  import:         common
-  main-is:        simple.hs
-  hs-source-dirs: example
-  build-depends:  optparse-declarative
-                , mtl
-
-executable example-subcmd
-  import:         common
-  main-is:        subcmd.hs
-  hs-source-dirs: example
-  build-depends:  optparse-declarative
-                , mtl
-
-executable example-verbose
-  import:         common
-  main-is:        verbose.hs
-  hs-source-dirs: example
-  build-depends:  optparse-declarative
-                , mtl
-
-executable example-nonstrargs
-  import:         common
-  main-is:        nonstrargs.hs
-  hs-source-dirs: example
-  build-depends:  optparse-declarative
-                , mtl
+  hs-source-dirs:   src
+  exposed-modules:  Options.Declarative
+  build-depends:    base >=4.7 && <5
+                  , mtl
+  default-language: Haskell2010

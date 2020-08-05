@@ -13,23 +13,23 @@ test: test-example-simple test-example-subcmd test-example-verbose test-example-
 
 .PHONY: test-example-simple
 test-example-simple: build
-	cabal v2-build $(CABAL_OPTIONS) optparse-declarative:exe:example-simple
-	cabal exec -- example-simple Tanaka
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:simple
+	cabal exec -- simple Tanaka
 
 .PHONY: test-example-subcmd
 test-example-subcmd: build
-	cabal v2-build $(CABAL_OPTIONS) optparse-declarative:exe:example-subcmd
-	cabal exec -- example-subcmd greet Tanaka
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:subcmd
+	cabal exec -- subcmd greet Tanaka
 
 .PHONY: test-example-verbose
 test-example-verbose: build
-	cabal v2-build $(CABAL_OPTIONS) optparse-declarative:exe:example-verbose
-	cabal exec -- example-verbose -v3
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:verbose
+	cabal exec -- verbose -v3
 
 .PHONY: test-example-nonstrargs
 test-example-nonstrargs: build
-	cabal v2-build $(CABAL_OPTIONS) optparse-declarative:exe:example-nonstrargs
-	cabal exec -- example-nonstrargs 1 2 3
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:nonstrargs
+	cabal exec -- nonstrargs 1 2 3
 
 .PHONY: repl
 repl:
