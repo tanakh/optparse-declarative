@@ -1,0 +1,39 @@
+name: test
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        ghc: [8.6.5, 8.8.3, 8.10.1]
+        continue-on-error: [false]
+        include:
+          - ghc: latest
+            continue-on-error: true
+
+    runs-on: ubuntu-latest
+
+    continue-on-error: ${{ matrix.continue-on-error }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-haskell@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+      - uses: actions/cache@v2
+        with:
+          path: $HOME/.cabal/packages
+          key: packages-${{ runner.os }}-${{ matrix.ghc }}
+      - uses: actions/cache@v2
+        with:
+          path: $HOME/.cabal/store
+          key: store-${{ runner.os }}-${{ matrix.ghc }}
+      - run: make build-deps
+      - run: make build
+      - run: make test-example-simple
+      - run: make test-example-subcmd
+      - run: make test-example-verbose
+      - run: make test-example-nonstrargs
