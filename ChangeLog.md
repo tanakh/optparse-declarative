@@ -1,3 +1,7 @@
+# HEAD
+
+- Allow False as a default value for Bool arguments
+
 # 0.3.0
 
 - Simplify API

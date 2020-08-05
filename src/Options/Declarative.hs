@@ -112,6 +112,7 @@ instance ArgRead String where
 
 instance ArgRead Bool where
     argRead Nothing = Just False
+    argRead (Just "f") = Just False
     argRead (Just "t") = Just True
     argRead _ = Nothing
 
