@@ -1,14 +1,14 @@
 cabal-version:       2.2
 name:                optparse-declarative
-version:             0.3.0
+version:             0.3.1
 synopsis:            Declarative command line option parser
 description:         Declarative and easy to use command line option parser
 homepage:            https://github.com/tanakh/optparse-declarative
 license:             MIT
 license-file:        LICENSE
 author:              Hideyuki Tanaka
-maintainer:          tanaka.hideyuki@gmail.com
-copyright:           (c) Hideyuki Tanaka 2015
+maintainer:          tanaka.hideyuki@gmail.com, kazuki.okamoto@kakkun61.com
+copyright:           2020 Kazuki Okamoto (岡本和樹), (c) Hideyuki Tanaka 2015
 category:            System
 build-type:          Simple
 
