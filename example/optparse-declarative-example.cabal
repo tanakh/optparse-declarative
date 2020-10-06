@@ -46,3 +46,10 @@ executable nonstrargs
   hs-source-dirs: .
   build-depends:  optparse-declarative
                 , mtl
+
+executable bool
+  import:         common
+  main-is:        bool.hs
+  hs-source-dirs: .
+  build-depends:  optparse-declarative
+                , mtl
