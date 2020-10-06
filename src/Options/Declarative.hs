@@ -32,7 +32,6 @@ module Options.Declarative (
     -- * Defining argment types
     ArgRead(..),
     Def,
-    List(..),
 
     -- * Subcommands support
     Group(..),
@@ -107,7 +106,7 @@ instance ArgRead Integer
 
 instance ArgRead Double
 
-instance ArgRead String where
+instance {-# OVERLAPPING #-} ArgRead String where
     argRead [] = Nothing
     argRead xs = Just $ last xs
 
@@ -123,14 +122,10 @@ instance ArgRead a => ArgRead (Maybe a) where
     argRead [] = Just Nothing
     argRead xs = Just <$> argRead xs
 
-newtype List a = List { getList :: [a] }
-
-instance ArgRead a => ArgRead (List a) where
-    type Unwrap (List a) = [a]
-    unwrap v = getList v
+instance {-# OVERLAPPABLE #-} ArgRead a => ArgRead [a] where
     argRead xs = case mapMaybe (argRead . (:[])) xs of
                  [] -> Nothing
-                 xs -> Just $ List xs
+                 xs -> Just xs
 
 -- | The argument which has defalut value
 newtype Def (defaultValue :: Symbol) a =

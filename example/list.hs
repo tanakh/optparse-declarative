@@ -4,7 +4,7 @@ import           Control.Monad
 import           Control.Monad.Trans
 import           Options.Declarative
 
-greet :: Flag "n" '["name"] "STRING" "name" (List String)
+greet :: Flag "n" '["name"] "STRING" "name" [String]
       -> Cmd "Count the number of people" ()
 greet name =
     let people_name_list = get name
