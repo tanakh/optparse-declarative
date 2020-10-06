@@ -42,10 +42,8 @@ module Options.Declarative (
     run, run_,
     ) where
 
-import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Reader
-import           Control.Monad.Trans
 import           Data.List
 import           Data.Maybe
 import           Data.Monoid
@@ -56,7 +54,6 @@ import           System.Environment
 import           System.Exit
 import           System.IO
 import           Text.Read
--- import           Debug.Trace
 
 -- | Command line option
 class Option a where
@@ -112,10 +109,11 @@ instance ArgRead Double
 
 instance ArgRead String where
     argRead [] = Nothing
-    argRead xs = Just $ head $ reverse xs
+    argRead xs = Just $ last xs
 
 instance ArgRead Bool where
     argRead [] = Just False
+    argRead ["f"] = Just False
     argRead ["t"] = Just True
     argRead _ = Nothing
 
@@ -123,17 +121,16 @@ instance ArgRead Bool where
 
 instance ArgRead a => ArgRead (Maybe a) where
     argRead [] = Just Nothing
-    argRead xs = argRead xs
+    argRead xs = Just <$> argRead xs
 
 newtype List a = List { getList :: [a] }
 
 instance ArgRead a => ArgRead (List a) where
     type Unwrap (List a) = [a]
     unwrap v = getList v
-    argRead xs = let vs = (argRead . (:[])) <$> xs
-                 in case [fromJust v | v <- vs, isJust v] of
-                    [] -> Nothing
-                    xs -> Just $ List xs
+    argRead xs = case mapMaybe (argRead . (:[])) xs of
+                 [] -> Nothing
+                 xs -> Just $ List xs
 
 -- | The argument which has defalut value
 newtype Def (defaultValue :: Symbol) a =
@@ -240,17 +237,18 @@ instance ( KnownSymbol shortNames
             (symbolVal (Proxy :: Proxy help))
         : getOptDescr (f undefined)
 
-    runCmd f name mbver options nonOptions unrecognized
-       = let flagname = head $ symbolVals (Proxy :: Proxy longNames) ++
-                                 [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
-             mbs = map snd $ filter ((== flagname) . fst) options
-         in case (mbs, argRead mbs) of
-                      ([], Nothing) ->
-                          errorExit name $ "flag must be specified: --" ++ flagname
-                      (s:_, Nothing) ->
-                          errorExit name $ "bad argument: --" ++ flagname ++ "=" ++ s
-                      (_, Just arg) ->
-                          runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
+    runCmd f name mbver options nonOptions unrecognized =
+        let flagname = head $
+                       symbolVals (Proxy :: Proxy longNames) ++
+                       [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
+            mbs = map snd $ filter ((== flagname) . fst) options
+        in case (argRead mbs, mbs) of
+            (Nothing, []) ->
+                errorExit name $ "flag must be specified: --" ++ flagname
+            (Nothing, s:_) ->
+                errorExit name $ "bad argument: --" ++ flagname ++ "=" ++ s
+            (Just arg, _) ->
+                runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
 
 instance {-# OVERLAPPABLE #-}
          ( KnownSymbol placeholder, ArgRead a, IsCmd c )
