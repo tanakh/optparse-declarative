@@ -109,23 +109,16 @@ There is another way of interpreting multiple options of the same name.
 Suppose if you need to get multiple values from the same option.
 Say, you wish to get `["Hello", "Goodbye"]` from the command-line
 option `--greet=Hello --greeet=Goodbye`. Then, you can use
-the modifier `List` to indicate that it accepts multiple values.
+the type `[]` to indicate that it accepts multiple values.
 The first line of the function `greet` in the example above
 would be changed as this:
 
 ```hs
-greet :: Flag "g" '["greet"] "STRING" "greeting message" (List String)
+greet :: Flag "g" '["greet"] "STRING" "greeting message" [String]
 ```
 
 The value returned by `get` will be a value of type `[String]`.
 See the complete working example at `example/list.hs` for details.
-
-The reason why we did not use `[String]` for specifying multiple
-values was that it is hard to tell apart `String` from a list of
-`Char` because `String` a type synonym of `[Char]`. If we only
-allow other string types such as `Text` and drop the support for
-`String`, we would be able to allow notations such as `[Text]` or
-`[Int]`.
 
 
 ## Writing multiple subcommands
@@ -245,11 +238,10 @@ We explain which function to define explicitly, depending on the
 property of `T`.
 
 If `T` is the type of the final value you take out of a command line,
-you do not have to define `Unwrap`. If `T` is a wrapper like `Def` or
-`List`, define `type Unwrap T = <unwrapped type>`. For `Def x y`,
-`type Unwrap (Def x y) = y`, while `type Unwrap (List x) = [x]` for
-`List x`. If you defined `Unwrap`, define `unwrap` that takes
-an actual value out of the wrapped value.
+you do not have to define `Unwrap`. If `T` is a wrapper like `Def`,
+define `type Unwrap T = <unwrapped type>`. For `Def x y`,
+`type Unwrap (Def x y) = y`. If you defined `Unwrap`, define `unwrap`
+that takes an actual value out of the wrapped value.
 
 `argRead` is the main function that converts String into a value.
 If the type is an instance of `Read` and you are satisfied with
