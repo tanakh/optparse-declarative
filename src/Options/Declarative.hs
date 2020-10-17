@@ -41,12 +41,11 @@ module Options.Declarative (
     run, run_,
     ) where
 
-import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Reader
-import           Control.Monad.Trans
 import           Data.List
 import           Data.Maybe
+import           Data.Monoid
 import           Data.Proxy
 import           GHC.TypeLits
 import           System.Console.GetOpt
@@ -93,9 +92,9 @@ class ArgRead a where
     unwrap = id
 
     -- | Argument parser
-    argRead :: Maybe String -> Maybe a
-    default argRead :: Read a => Maybe String -> Maybe a
-    argRead s = readMaybe =<< s
+    argRead :: [String] -> Maybe a
+    default argRead :: Read a => [String] -> Maybe a
+    argRead ss = getLast $ mconcat $ Last . readMaybe <$> ss
 
     -- | Indicate this argument is mandatory
     needArg :: Proxy a -> Bool
@@ -107,20 +106,26 @@ instance ArgRead Integer
 
 instance ArgRead Double
 
-instance ArgRead String where
-    argRead = id
+instance {-# OVERLAPPING #-} ArgRead String where
+    argRead [] = Nothing
+    argRead xs = Just $ last xs
 
 instance ArgRead Bool where
-    argRead Nothing = Just False
-    argRead (Just "f") = Just False
-    argRead (Just "t") = Just True
+    argRead [] = Just False
+    argRead ["f"] = Just False
+    argRead ["t"] = Just True
     argRead _ = Nothing
 
     needArg _ = False
 
 instance ArgRead a => ArgRead (Maybe a) where
-    argRead Nothing = Just Nothing
-    argRead (Just a) = Just <$> argRead (Just a)
+    argRead [] = Just Nothing
+    argRead xs = Just <$> argRead xs
+
+instance {-# OVERLAPPABLE #-} ArgRead a => ArgRead [a] where
+    argRead xs = case mapMaybe (argRead . (:[])) xs of
+                 [] -> Nothing
+                 xs -> Just xs
 
 -- | The argument which has defalut value
 newtype Def (defaultValue :: Symbol) a =
@@ -131,8 +136,10 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
     unwrap = unwrap . getDef
 
     argRead s =
-        let s' = fromMaybe (symbolVal (Proxy :: Proxy defaultValue)) s
-        in Def <$> argRead (Just s')
+        let s' = case s of
+                 [] -> [symbolVal (Proxy :: Proxy defaultValue)]
+                 v  -> v
+        in Def <$> argRead s'
 
 -- | Command
 newtype Cmd (help :: Symbol) a =
@@ -229,11 +236,11 @@ instance ( KnownSymbol shortNames
         let flagname = head $
                        symbolVals (Proxy :: Proxy longNames) ++
                        [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
-            mbs = lookup flagname options
+            mbs = map snd $ filter ((== flagname) . fst) options
         in case (argRead mbs, mbs) of
-            (Nothing, Nothing) ->
+            (Nothing, []) ->
                 errorExit name $ "flag must be specified: --" ++ flagname
-            (Nothing, Just s) ->
+            (Nothing, s:_) ->
                 errorExit name $ "bad argument: --" ++ flagname ++ "=" ++ s
             (Just arg, _) ->
                 runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
@@ -261,7 +268,7 @@ runCmdOne f name mbver options nonOptions unrecognized =
     case nonOptions of
         [] -> errorExit name "not enough arguments"
         (opt: rest) ->
-            case argRead (Just opt) of
+            case argRead [opt] of
                 Nothing ->
                     errorExit name $ "bad argument: " ++ opt
                 Just arg ->
@@ -274,7 +281,7 @@ instance {-# OVERLAPPING #-}
         " " ++ symbolVal (Proxy :: Proxy placeholder) ++ getUsageHeader (f undefined) prog
 
     runCmd f name mbver options nonOptions unrecognized =
-        case traverse argRead $ Just <$> nonOptions of
+        case traverse argRead $ (:[]) <$> nonOptions of
             Nothing ->
                 errorExit name $ "bad arguments: " ++ unwords nonOptions
             Just opts ->
