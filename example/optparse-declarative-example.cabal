@@ -53,3 +53,10 @@ executable bool
   hs-source-dirs: .
   build-depends:  optparse-declarative
                 , mtl
+
+executable list
+  import:         common
+  main-is:        list.hs
+  hs-source-dirs: .
+  build-depends:  optparse-declarative
+                , mtl
