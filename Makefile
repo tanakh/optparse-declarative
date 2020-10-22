@@ -52,7 +52,6 @@ repl:
 .PHONY: format
 format:
 	$(PWSH) -Command "& { Get-ChildItem -Filter '*.hs' -Recurse src, app, test | ForEach-Object { stylish-haskell -i $$_.FullName } }"
-	stylish-haskell -i Setup.hs
 
 .PHONY: setup-format
 setup-format:
