@@ -111,10 +111,10 @@ instance {-# OVERLAPPING #-} ArgRead String where
     argRead xs = Just $ last xs
 
 instance ArgRead Bool where
-    argRead [] = Just False
+    argRead []    = Just False
     argRead ["f"] = Just False
     argRead ["t"] = Just True
-    argRead _ = Nothing
+    argRead _     = Nothing
 
     needArg _ = False
 
