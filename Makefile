@@ -9,7 +9,26 @@ build-deps:
 	cabal v2-build --only-dependencies $(CABAL_OPTIONS)
 
 .PHONY: test
-test: test-example-simple test-example-subcmd test-example-verbose test-example-nonstrargs
+test: test-example-bool test-example-list test-example-nonstrargs test-example-simple test-example-subcmd test-example-verbose
+
+.PHONY: test-example-bool
+test-example-bool: build
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:bool
+	cabal exec -- bool
+	cabal exec -- bool -b
+	cabal exec -- bool --bool
+
+.PHONY: test-example-list
+test-example-list: build
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:list
+	cabal exec -- list -n A
+	cabal exec -- list -n A -n B
+
+.PHONY: test-example-nonstrargs
+test-example-nonstrargs: build
+	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:nonstrargs
+	cabal exec -- nonstrargs 1
+	cabal exec -- nonstrargs 1 2 3
 
 .PHONY: test-example-simple
 test-example-simple: build
@@ -25,11 +44,6 @@ test-example-subcmd: build
 test-example-verbose: build
 	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:verbose
 	cabal exec -- verbose -v3
-
-.PHONY: test-example-nonstrargs
-test-example-nonstrargs: build
-	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:nonstrargs
-	cabal exec -- nonstrargs 1 2 3
 
 .PHONY: repl
 repl:

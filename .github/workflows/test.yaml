@@ -33,7 +33,9 @@ jobs:
           key: store-${{ runner.os }}-${{ matrix.ghc }}
       - run: make build-deps
       - run: make build
+      - run: make test-example-bool
+      - run: make test-example-list
+      - run: make test-example-nonstrargs
       - run: make test-example-simple
       - run: make test-example-subcmd
       - run: make test-example-verbose
-      - run: make test-example-nonstrargs
