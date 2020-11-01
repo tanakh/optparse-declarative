@@ -1,4 +1,8 @@
-# 0.4.0
+# 0.4.1 — 2020.11.01
+
+- Allow no options for `[a]`
+
+# 0.4.0 — 2020.11.01
 
 ## Breaking changes
 

@@ -123,9 +123,7 @@ instance ArgRead a => ArgRead (Maybe a) where
     argRead xs = Just <$> argRead xs
 
 instance {-# OVERLAPPABLE #-} ArgRead a => ArgRead [a] where
-    argRead xs = case mapMaybe (argRead . (:[])) xs of
-                 [] -> Nothing
-                 xs -> Just xs
+    argRead xs = Just $ mapMaybe (argRead . (:[])) xs
 
 -- | The argument which has default value
 newtype Def (defaultValue :: Symbol) a =
