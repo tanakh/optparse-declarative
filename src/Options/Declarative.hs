@@ -29,7 +29,7 @@ module Options.Declarative (
     Flag,
     Arg,
 
-    -- * Defining argment types
+    -- * Defining argument types
     ArgRead(..),
     Def,
 
@@ -127,7 +127,7 @@ instance {-# OVERLAPPABLE #-} ArgRead a => ArgRead [a] where
                  [] -> Nothing
                  xs -> Just xs
 
--- | The argument which has defalut value
+-- | The argument which has default value
 newtype Def (defaultValue :: Symbol) a =
     Def { getDef :: a }
 
@@ -143,7 +143,7 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
 
 -- | Command
 newtype Cmd (help :: Symbol) a =
-    Cmd { unCmd :: ReaderT Int IO a }
+    Cmd (ReaderT Int IO a)
     deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Output string when the verbosity level is greater than or equal to `logLevel`
@@ -217,7 +217,7 @@ instance ( KnownSymbol shortNames
          , IsCmd c )
          => IsCmd (Flag shortNames longNames placeholder help a -> c) where
     getOptDescr f =
-        let flagname = head $
+        let flagName = head $
                        symbolVals (Proxy :: Proxy longNames) ++
                        [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
         in Option
@@ -225,23 +225,23 @@ instance ( KnownSymbol shortNames
             (symbolVals (Proxy :: Proxy longNames))
             (if needArg (Proxy :: Proxy a)
              then ReqArg
-                  (flagname, )
+                  (flagName, )
                   (symbolVal (Proxy :: Proxy placeholder))
              else NoArg
-                  (flagname, "t"))
+                  (flagName, "t"))
             (symbolVal (Proxy :: Proxy help))
         : getOptDescr (f undefined)
 
     runCmd f name mbver options nonOptions unrecognized =
-        let flagname = head $
+        let flagName = head $
                        symbolVals (Proxy :: Proxy longNames) ++
                        [ [c] | c <- symbolVal (Proxy :: Proxy shortNames) ]
-            mbs = map snd $ filter ((== flagname) . fst) options
+            mbs = map snd $ filter ((== flagName) . fst) options
         in case (argRead mbs, mbs) of
             (Nothing, []) ->
-                errorExit name $ "flag must be specified: --" ++ flagname
+                errorExit name $ "flag must be specified: --" ++ flagName
             (Nothing, s:_) ->
-                errorExit name $ "bad argument: --" ++ flagname ++ "=" ++ s
+                errorExit name $ "bad argument: --" ++ flagName ++ "=" ++ s
             (Just arg, _) ->
                 runCmd (f $ Flag arg) name mbver options nonOptions unrecognized
 
@@ -349,7 +349,7 @@ run' cmd name mbver args = do
             ++ [ Option "v" ["verbose"] (OptArg (\arg -> ("verbose", fromMaybe "" arg)) "n") "set verbosity level" ]
 
         prog     = unwords name
-        vermsg   = prog ++ maybe "" (" version " ++) mbver
+        verMsg   = prog ++ maybe "" (" version " ++) mbver
         header = "Usage: " ++ prog ++ " [OPTION...]" ++ getUsageHeader cmd prog ++ "\n" ++
                  "  " ++ getCmdHelp cmd ++ "\n\n" ++
                  "Options:"
@@ -366,7 +366,7 @@ run' cmd name mbver args = do
                   putStr usage
                   exitSuccess
             | isJust (lookup "version" options) -> do
-                  putStrLn vermsg
+                  putStrLn verMsg
                   exitSuccess
             | otherwise ->
                   runCmd cmd name mbver options nonOptions unrecognized
