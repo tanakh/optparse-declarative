@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DefaultSignatures          #-}
 {-# LANGUAGE ExistentialQuantification  #-}
@@ -41,6 +42,7 @@ module Options.Declarative (
     run, run_,
     ) where
 
+import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Reader
 import           Data.List
@@ -53,6 +55,10 @@ import           System.Environment
 import           System.Exit
 import           System.IO
 import           Text.Read
+
+#if !MIN_VERSION_base(4,13,0)
+import           Control.Monad.Fail
+#endif
 
 -- | Command line option
 class Option a where
@@ -142,7 +148,7 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
 -- | Command
 newtype Cmd (help :: Symbol) a =
     Cmd (ReaderT Int IO a)
-    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (Functor, Applicative, Alternative, Monad, MonadIO, MonadFix, MonadPlus, MonadFail)
 
 -- | Output string when the verbosity level is greater than or equal to `logLevel`
 logStr :: Int         -- ^ Verbosity Level
@@ -297,9 +303,9 @@ instance KnownSymbol help => IsCmd (Cmd help ()) where
             (_, [], []) -> do
                 let verbosityLevel = fromMaybe 0 $ do
                         s <- lookup "verbose" options
-                        if | null s -> return 1
+                        if | null s         -> return 1
                            | all (== 'v') s -> return $ length s + 1
-                           | otherwise -> readMaybe s
+                           | otherwise      -> readMaybe s
                 runReaderT m verbosityLevel
 
             _ -> do
