@@ -1,3 +1,7 @@
+# 0.4.2 — 2021.06.24
+
+- Add `Alternative`, `MonadFix`, `MonadPlus`, `MonadFail`, `MonadThrow`, and `MonadCatch` instances for `Cmd`
+
 # 0.4.1 — 2020.11.01
 
 - Allow no options for `[a]`
