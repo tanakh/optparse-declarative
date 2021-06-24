@@ -44,6 +44,7 @@ module Options.Declarative (
 
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.Catch
 import           Control.Monad.Reader
 import           Data.List
 import           Data.Maybe
@@ -148,7 +149,7 @@ instance (KnownSymbol defaultValue, ArgRead a) => ArgRead (Def defaultValue a) w
 -- | Command
 newtype Cmd (help :: Symbol) a =
     Cmd (ReaderT Int IO a)
-    deriving (Functor, Applicative, Alternative, Monad, MonadIO, MonadFix, MonadPlus, MonadFail)
+    deriving (Functor, Applicative, Alternative, Monad, MonadIO, MonadFix, MonadPlus, MonadFail, MonadThrow, MonadCatch)
 
 -- | Output string when the verbosity level is greater than or equal to `logLevel`
 logStr :: Int         -- ^ Verbosity Level
