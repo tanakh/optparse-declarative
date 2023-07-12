@@ -45,6 +45,7 @@ module Options.Declarative (
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Catch
+import           Control.Monad.Fix
 import           Control.Monad.Reader
 import           Data.List
 import           Data.Maybe
