@@ -45,6 +45,15 @@ test-example-verbose: build
 	cabal v2-build $(CABAL_OPTIONS) optparse-declarative-example:exe:verbose
 	cabal exec -- verbose -v3
 
+.PHONY: freeze
+freeze:
+	$(PWSH) -Command '&{\
+	  $$file = "cabal.project.$$(ghc --numeric-version).freeze";\
+	  if (Test-Path $$file) { Remove-Item $$file };\
+	  cabal freeze;\
+	  Move-Item cabal.project.freeze $$file;\
+	}'
+
 .PHONY: repl
 repl:
 	cabal v2-repl $(CABAL_OPTIONS)
