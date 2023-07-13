@@ -1,0 +1,22 @@
+cradle:
+  cabal:
+    - path: "./src/Options/Declarative.hs"
+      component: "lib:optparse-declarative"
+
+    - path: "./example/list.hs"
+      component: "optparse-declarative-example:exe:list"
+
+    - path: "./example/bool.hs"
+      component: "optparse-declarative-example:exe:bool"
+
+    - path: "./example/nonstrargs.hs"
+      component: "optparse-declarative-example:exe:nonstrargs"
+
+    - path: "./example/verbose.hs"
+      component: "optparse-declarative-example:exe:verbose"
+
+    - path: "./example/subcmd.hs"
+      component: "optparse-declarative-example:exe:subcmd"
+
+    - path: "./example/simple.hs"
+      component: "optparse-declarative-example:exe:simple"
