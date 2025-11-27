@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                optparse-declarative
-version:             0.4.2
+version:             0.4.3
 synopsis:            Declarative command line option parser
 description:         Declarative and easy to use command line option parser
 homepage:            https://github.com/tanakh/optparse-declarative
@@ -11,6 +11,10 @@ maintainer:          tanaka.hideyuki@gmail.com, kazuki.okamoto@kakkun61.com
 copyright:           2020 Kazuki Okamoto (岡本和樹), (c) Hideyuki Tanaka 2015
 category:            System
 build-type:          Simple
+tested-with:         GHC == 9.2.8
+                     GHC == 9.4.4
+                     GHC == 9.6.2
+ 
 
 extra-source-files:  README.md
                      ChangeLog.md
