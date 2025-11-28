@@ -1,4 +1,25 @@
-PWSH = pwsh
+GHC_VERSIONS := 9.12.2 9.10.2 9.8.4
+GHC_VERSION ?=
+EXTRA_CABAL_OPTIONS ?=
+ifdef GHC_VERSION
+CABAL_OPTIONS := --with-compiler=ghc-$(GHC_VERSION) $(EXTRA_CABAL_OPTIONS)
+endif
+TARGET ?= build
+
+.PHONY: each
+.ONESHELL: each
+each:
+	if [[ "$(TARGET)" == "each" ]];
+	then
+	  echo "TARGET must not be \"each\"" >&2;
+	  exit 1;
+	fi
+	for ghc_version in $(GHC_VERSIONS);
+	do
+	  cp cabal.project.$$ghc_version.freeze cabal.project.freeze;
+	  $(MAKE) GHC_VERSION=$$ghc_version $(TARGET);
+	  if [[ -f cabal.project.freeze ]]; then rm cabal.project.freeze; fi;
+	done
 
 .PHONY: build
 build: build-deps
@@ -46,13 +67,13 @@ test-example-verbose: build
 	cabal exec -- verbose -v3
 
 .PHONY: freeze
+.ONESHELL: freeze
 freeze:
-	$(PWSH) -Command '&{\
-	  $$file = "cabal.project.$$(ghc --numeric-version).freeze";\
-	  if (Test-Path $$file) { Remove-Item $$file };\
-	  cabal freeze;\
-	  Move-Item cabal.project.freeze $$file;\
-	}'
+	file="cabal.project.$(GHC_VERSION).freeze";
+	if [ -f $$file ]; then rm $$file; fi;
+	cabal $(CABAL_OPTIONS) freeze;
+	echo "with-compiler: ghc-$(GHC_VERSION)" >> cabal.project.freeze;
+	mv cabal.project.freeze $$file;
 
 .PHONY: repl
 repl:
@@ -60,7 +81,7 @@ repl:
 
 .PHONY: format
 format:
-	$(PWSH) -Command "& { Get-ChildItem -Filter '*.hs' -Recurse src, app, test | ForEach-Object { stylish-haskell -i $$_.FullName } }"
+	nix fmt
 
 .PHONY: setup-format
 setup-format:
@@ -70,10 +91,6 @@ setup-format:
 lint:
 	hlint src
 	hlint app
-
-.PHONY: setup-lint
-setup-lint:
-	cabal v2-install hlint --overwrite-policy=always
 
 .PHONY: doc
 doc:
