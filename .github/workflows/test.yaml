@@ -19,7 +19,7 @@ jobs:
         with:
           ghc-version: ${{ matrix.ghc }}
       - run: cp cabal.project.${{ matrix.ghc }}.freeze cabal.project.freeze
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         id: restore-cache
         with:
           path: |
@@ -28,7 +28,7 @@ jobs:
           key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('./cabal.project.freeze') }}
           restore-keys: cabal-${{ runner.os }}-${{ matrix.ghc }}-
       - run: make build-deps
-      - uses: actions/cache/save@v3
+      - uses: actions/cache/save@v4
         if: steps.restore-cache.outputs.cache-hit != 'true'
         with:
           path: |
