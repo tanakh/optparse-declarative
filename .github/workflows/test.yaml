@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: haskell-actions/setup@v2.11.0
+      - uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
           ghc-version: ${{ matrix.ghc }}
